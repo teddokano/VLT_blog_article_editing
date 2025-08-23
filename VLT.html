@@ -1,0 +1,527 @@
+<div id="idx0" class="pt1">
+<h1><a target="_blank" name="0"></a>0. 目次</h1>
+</div>
+<p>&nbsp;</p>
+<ul>
+<li><a class="smoothScroll" href="#idx0" target="_self">0. 目次</a></li>
+<li><a class="smoothScroll" href="#idx1" target="_self">1. 電圧レベル・トランスレータって？</a></li>
+<li><a class="smoothScroll" href="#idx2" target="_self">2. デジタル信号</a>
+<ul>
+<li><a class="smoothScroll" href="#idx2-1" target="_self">2.1 様々なデジタル信号</a></li>
+<li><a class="smoothScroll" href="#idx2-2" target="_self">2.2 CMOSとTTL：単純な電圧のHIGHとLOWによる論理レベルの信号</a></li>
+<li><a class="smoothScroll" href="#idx2-3" target="_self">2.3 入出力電圧の規定：VOH / VOL と VIH / VIL</a>
+<ul>
+<li><a class="smoothScroll" href="#idx2-3-1" target="_self">2.3.1 出力電圧の規定：VOHとVOL</a></li>
+<li><a class="smoothScroll" href="#idx2-3-2" target="_self">2.3.2 入力電圧の規定：VIHとVIL</a></li>
+<li><a class="smoothScroll" href="#idx2-3-3" target="_self">2.3.3 VOH / VOL と VIH / VIL の関係</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="smoothScroll" href="#idx3" target="_self">3. 基本的な電圧レベル変換の方法：片方向信号の変換</a>
+<ul>
+<li><a class="smoothScroll" href="#idx3-1" target="_self">3.1 チップの電源電圧が違っても変換の必要がない例</a></li>
+<li><a class="smoothScroll" href="#idx3-2" target="_self">3.2 変換が必要な例</a>
+<ul>
+<li><a class="smoothScroll" href="#idx3-2-1" target="_self">3.2.1 オープンドレイン出力による変換</a></li>
+<li><a class="smoothScroll" href="#idx3-2-2" target="_self">3.2.2 標準ロジック(汎用ロジック)チップを用いた変換</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="smoothScroll" href="#idx4" target="_self">4. 自動方向切り替えが必要な双方向信号の変換</a>
+<ul>
+<li><a class="smoothScroll" href="#idx4-1" target="_self">4.1 単体MOSトランジスタによる双方向変換</a></li>
+<li><a class="smoothScroll" href="#idx4-2" target="_self">4.2 専用品による双方向変換</a>
+<ul>
+<li><a class="smoothScroll" href="#idx4-2-1" target="_self">4.2.1 I&sup2;C信号電圧変換チップ</a></li>
+<li><a class="smoothScroll" href="#idx4-2-2" target="_self">4.2.2 高速化を図った双方向オープンドレイン信号電圧変換チップ</a></li>
+<li><a class="smoothScroll" href="#idx4-2-3" target="_self">4.2.3 双方向プッシュプル信号電圧変換チップ</a></li>
+<li><a class="smoothScroll" href="#idx4-2-4" target="_self">4.2.4 I3C信号電圧変換チップ</a></li>
+<li><a class="smoothScroll" href="#idx4-2-5" target="_self">4.2.5 バッファによる変換</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="smoothScroll" href="#idx5" target="_self">5. まとめ</a></li>
+<ul>
+<li><a class="smoothScroll" href="#idx5-1" target="_self">5.1&nbsp;ブログ内で紹介した方式/品番の比較</a></li>
+</ul>
+<li><a class="smoothScroll" href="#idx6" target="_self">6. 参考資料</a></li>
+</ul>
+<div id="idx1" class="pt1">
+<h1><a target="_blank" name="1"></a>1. 電圧レベル・トランスレータって？</h1>
+</div>
+<p>&nbsp;</p>
+<p>デジタル回路同士をつなぐとき，単純に信号線を直結すればいい&hellip;<br />ということはなくて，「<strong>論理レベルの電圧</strong>」が合わないと，動作しなかったり，不安定になったり，最悪の場合チップを壊してしまうことがあります．<br />そんなときに便利に使えるのが<strong>電圧レベル・トランスレータ(Voltage Level Translator．電圧レベル・シフタとも呼ぶ)</strong>です．</p>
+<p>電圧レベル・トランスレータは，異なる電源電圧のデジタル回路間で信号をやり取りできるようにする回路です．</p>
+<p>例えば，次のようなケースで必要になります．</p>
+<ul>
+<li>3.3Vマイコン &harr;︎ 5Vセンサー の接続</li>
+<li>1.8V FPGA &harr;︎ 3.3V周辺デバイス の接続</li>
+</ul>
+<p class="lia-align-center"><em><li-image width="999" height="411" alt="スクリーンショット 2025-08-21 12.39.23.png" align="inline" id="353422iB8CF539AB05FF6CC" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図1：信号電圧の違い</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p>このブログでは，TTL，LVTTL，CMOSの<strong>電圧レベルの違い</strong>や，それを判断する上で重要なV<sub>OH</sub>/V<sub>OL</sub>/V<sub>IH</sub>/V<sub>IL</sub>の意味について解説し，さらに様々な変換の方法の中からどのような電圧レベル・トランスレータを選べばよいかを解説します．</p>
+<p>さらにこのブログでは<strong>信号の方向を自動で検出して変換を行う</strong>電圧レベル・トランスレータの具体例を見ていきます．</p>
+<p>NXPではSDカード/SIMカード向けや，GTL&harr;︎TTLレベル変換のような特定用途向け電圧レベル・トランスレータもラインナップしていますが，このブログは汎用またはシリアル・バス用途をターゲットにした製品の解説となります．</p>
+<p>&nbsp;</p>
+<div id="idx2" class="pt1">
+<h1><a target="_blank" name="2"></a>2. デジタル信号</h1>
+</div>
+<h2>&nbsp;</h2>
+<div id="idx2-1" class="pt1">
+<h2><a target="_blank" name="2.1"></a>2.1 様々なデジタル信号</h2>
+</div>
+<p>&nbsp;</p>
+<p>いわゆる「デジタル信号」は<strong>論理レベルの1と0を電気的に表現したもの</strong>です．この論理レベルの1と0を扱う回路設計方法には歴史的に様々なものがあります．論理レベルを単純な電圧のHIGHとLOWで表現するものや，電圧の差を利用してHIGH/LOWを表現するものなど．</p>
+<p>単純なHIGH/LOWを5V/0Vで表す<strong>TTL</strong>．さらにそのTTLを低電圧化し3.3V/0Vで表す<strong>LVTTL</strong>などバイポーラ・トランジスタ回路を基準に電圧レベルが決められたもの．<br />同様にバイポーラ・トランジスタを使いながらも負電源を使い低振幅で差動で動作論理レベルを実装し，高速化が図られたECL．基準電圧を設けて低振幅のシングルエンド信号でHIGH/LOWを伝達するGTLなど...</p>
+<p>また単純なHIGH/LOWでの表現でも低消費電力化を目的に開発された4000シリーズと呼ばれる<strong>CMOS</strong>汎用ロジックでは，HIGHレベルとして3V〜18Vを使うことができました．<br /><a href="https://en.wikipedia.org/wiki/Logic_family" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Logic_family</a></p>
+<p>このブログでは，上記のような様々な論理レベルの中でも，<strong>単純なHIGHとLOWの電圧</strong>で論理を表現するTTL(LVTTL)とCMOSの電圧レベルの扱いについて解説します．<br />その他の信号変換には専用チップが用いられるため，ここでは扱いません．</p>
+<p>このほか近年では半導体技術の微細化・高速化・低消費電力化が進むとともに，電源に使われる電圧は低くなってきています．このため信号電圧差を橋渡しする電圧レベル・トランスレータは特に重要になってきています．</p>
+<p class="lia-align-center"><em><li-image width="999" height="553" alt="スクリーンショット 2025-08-21 12.42.23.png" align="inline" id="353423i1B1403A784700EF6" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図2：信号波形 - 電圧の高低(HIGH/LOW)で論理レベルを表す</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<div id="idx2-2" class="pt1">
+<h2><a target="_blank" name="2.2"></a>2.2 CMOSとTTL：単純な電圧のHIGHとLOWによる論理レベルの信号</h2>
+</div>
+<p>&nbsp;</p>
+<p>デジタル回路に使われる単純な電圧のHIGHとLOWによる論理レベルの信号には，HIGHを電源電圧で，LOWを0Vとするものが一般的です．電源電圧が異なってもHIGH/LOWの電圧レベルが同じであれば，そのまま信号をやり取りすることができます．</p>
+<p>たとえばTTL(LVTTL)は入力される信号が2.0V以上であればHIGH，0.8V以下であればLOWと解釈します．このような取り決めがあるため，TTL信号であれば互いに電源電圧が異なってもHIGH/LOWの電圧レベルは変わりません．<br />いっぽう，CMOSは電源電圧の半分の電圧を基準にしてHIGH/LOWを定義します．このためCMOSは電源電圧が異なるとHIGH/LOWの電圧レベルも変わります．</p>
+<p class="lia-align-center"><em><li-image width="999" height="362" alt="スクリーンショット 2025-08-21 12.52.04.png" align="inline" id="353425i8C1BAD1A18384CA8" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図3：入力信号電圧の規定</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<div id="idx2-3" class="pt1">
+<h2><a target="_blank" name="2.3"></a>2.3 入出力電圧の規定：V<sub>OH</sub>&nbsp;/ V<sub>OL</sub>&nbsp;と V<sub>IH</sub>&nbsp;/ V<sub>IL</sub></h2>
+</div>
+<p>&nbsp;</p>
+<p>デジタル回路では<strong>HIGHとLOWとして出力される電圧</strong>と，<strong>入力される信号をHIGHとLOWに判断する電圧</strong>が規定されています．これらは使用する各チップの仕様で規定されているため，データシートで確認する必要があります．</p>
+<ul>
+<li><strong>V<sub>OH</sub></strong>&nbsp;: HIGHレベル出力電圧 (HIGH-level output voltage)</li>
+<li><strong>V</strong><sub><strong>OL</strong>&nbsp;</sub>: LOWレベル出力電圧 (LOW-level output voltage)</li>
+<li><strong>V<sub>IH</sub></strong>&nbsp;: HIGHレベル入力電圧 (HIGH-level input voltage)</li>
+<li><strong>V</strong><sub><strong>IL</strong>&nbsp;</sub>: LOWレベル入力電圧 (LOW-level input voltage)</li>
+</ul>
+<p>&nbsp;</p>
+<div id="idx2-3-1" class="pt1">
+<h3><a target="_blank" name="2.3.1"></a>2.3.1 出力電圧の規定：V<sub>OH</sub>とV<sub>OL</sub></h3>
+</div>
+<p>&nbsp;</p>
+<p>出力ではHIGH/LOWを出力する際の電流を考えておかねばなりません．電流は負荷により増減します．</p>
+<p>HIGH出力での最大流出電流時に保証できる電圧を<strong>V<sub>OH</sub>(min)</strong>，LOW出力での最大流入電流時に保証できる電圧を<strong>V<sub>OL</sub>(max)</strong>と呼びます．</p>
+<p>V<sub>OH</sub>(min)は回路出力段の上側のトランジスタがONになったときに出力される電圧です．このトランジスタには「ON抵抗」と呼ばれる抵抗分があります．</p>
+<p>トランジスタから流れ出る電流が大きい場合，"トランジスタの抵抗分 x そこに流れる電流"で電圧が発生．すると出力はその電圧分だけ電源電圧から下がってしまいV<sub>OH</sub>が低くなってしまいます．このため，あらかじめ想定される最大流出電流のときに保証できる最小の電圧がV<sub>OH</sub>(min)となります．</p>
+<p>V<sub>OL</sub>はこの逆となります．回路出力段の下側のトランジスタがONになったとき，流れ込む電流が大きいと，上記と同様にトランジスタのON抵抗によって発生する電圧によって，出力は0Vより上がってしまいます．これを考慮し，あらかじめ想定される最大流入電流のときに保証できる最大の電圧がV<sub>OL</sub>(max)となります．</p>
+<p>&nbsp;</p>
+<p class="lia-align-center"><em><li-image width="999" height="317" alt="スクリーンショット 2025-08-21 12.53.04.png" align="inline" id="353426i0BAA601551DC2128" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図4：デジタル信号出力回路(プッシュプル)</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p class="lia-align-center"><em><li-image width="999" height="453" alt="スクリーンショット 2025-08-21 12.53.18.png" align="inline" id="353427i9AF8905D7D6B9635" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図5：HIGH出力電圧は負荷によって変化する</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p class="lia-align-center"><li-image width="999" height="469" alt="スクリーンショット 2025-08-21 12.53.31.png" align="inline" id="353428i4C556C1D566CA8FA" size="large" sourceType="new"></li-image></p>
+<p class="lia-align-center"><em>図6：LOW出力電圧も負荷によって変化する</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<div id="idx2-3-2" class="pt1">
+<h3><a target="_blank" name="2.3.2"></a>2.3.2 入力電圧の規定：V<sub>IH</sub>とV<sub>IL</sub></h3>
+</div>
+<p>&nbsp;</p>
+<p>入力には<strong>HIGHとLOWを判断するための電圧レベル</strong>があります．<strong>V<sub>IH</sub>(min)</strong>と<strong>V<sub>IL</sub>(max)</strong>です．電圧がV<sub>IH</sub>(min)以上であればHIGHと判断され，V<sub>IL</sub>(max)以下であればLOWと判断されます．</p>
+<p>CMOS入力では電源電圧の1/2がHIGHとLOWの基準となりますが，これをそのままV<sub>IH</sub>(min)とV<sub>IL</sub>(max)とはしていません．これはチップごとのバラツキなどによって閾値が上下するためです．また，遅く立ち上がる信号に乗ったノイズなどによるグリッチが出力に現れることを軽減するため，入力にはヒステリシスを持たせることがあります．このような理由によりV<sub>IH</sub>(min)とV<sub>IL</sub>(max)はある程度の電圧差を設けて規定されます．</p>
+<p>&nbsp;</p>
+<div id="idx2-3-3" class="pt1">
+<h3><a target="_blank" name="2.3.3"></a>2.3.3 V<sub>OH</sub>&nbsp;/ V<sub>OL</sub>&nbsp;と V<sub>IH</sub>&nbsp;/ V<sub>IL</sub>&nbsp;の関係</h3>
+</div>
+<p>&nbsp;</p>
+<p>正常な信号のやり取りを行うには，出力と入力の関係は下式のようになっていなくてはなりません．</p>
+<ul>
+<li><strong>HIGHレベル： V<sub>OH</sub>(min) &gt; V<sub>IH</sub>(min)</strong></li>
+<li>L<strong>OWレベル： V<sub>OL</sub>(max) &lt; V<sub>IL</sub>(max)</strong></li>
+</ul>
+<p>この関係が守られていれば，出力側の回路は，次の入力側の回路に対してHIGH/LOWを正しく伝えることができます．さらにこの互いの電圧差である「V<sub>OH</sub>(min) - V<sub>IH</sub>(min)」や「V<sub>IL</sub>(max) - V<sub>OL</sub>(max)」は「<strong>ノイズ・マージン</strong>」となり，ノイズ耐性を高く保つための目安になります．</p>
+<p class="lia-align-center"><em><li-image width="999" height="514" alt="スクリーンショット 2025-08-21 12.55.13.png" align="inline" id="353429i73C247F8EEBDF2A6" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図7：V<sub>OH</sub>(min) / V<sub>OL</sub>(max) と V<sub>IH</sub>(min) / V<sub>IL</sub>(max)</em></p>
+<p>&nbsp;</p>
+<div id="idx3" class="pt1">
+<h1><a target="_blank" name="3"></a>3. 基本的な電圧レベル変換の方法：片方向信号の変換</h1>
+</div>
+<h2>&nbsp;</h2>
+<div id="idx3-1" class="pt1">
+<h2><a target="_blank" name="3.1"></a>3.1 チップの電源電圧が違っても変換の必要がない例</h2>
+</div>
+<p>&nbsp;</p>
+<p>『<strong>「V<sub>OH</sub>(min) &gt; V<sub>IH</sub>(min)」</strong>かつ<strong>「V<sub>OL</sub>(max) &lt; V<sub>IL</sub>(max)」</strong>』の関係が成り立つ場合には基本的には電圧レベル変換は必要ありません．たとえば<strong>TTLとLVTTLはそれぞれのチップに使われる電源電圧は違うものの，入出力電圧の規定は同一</strong>です．</p>
+<p>TTL(5V)とLVTTL(3.3V)ではどちらも，V<sub>OH</sub>(min)は2.4V，V<sub>OL</sub>(max)は0.4Vです．V<sub>IH</sub>(min)/V<sub>IL</sub>(max)も，どちらも2.0V/0.8Vなので問題なく互いに接続できます．</p>
+<p>ただし出力電圧が入力側チップの電源電圧よりも高い場合には注意が必要です．出力側が5V，入力側が3.3V電源を使うチップである場合には，入力側は「<strong>5Vトレラント入力</strong>」に対応していなければなりません．</p>
+<p>5Vトレラント入力とは，5VのHIGH信号を3.3Vの電源電圧で動作するチップの入力に接続しても問題なく動作する入力のことです．一般的なチップの入力には静電気対策のためのESD保護回路が入っていますが，このESD保護回路が次の図のような回路で構成されていると5Vを入力した際に入力から3.3Vの電源に電流が逆流してしまい，チップを破壊してしまうことがあります．このような問題を起こさないための対策が取られた入力が5Vトレラント入力です．トレラント入力にはESD保護がないわけではなく，電源電圧より高い信号が入力されても問題がないような構造を持つESD保護回路が組み込まれています．</p>
+<p>図7のようなESD保護ダイオードは，入力側チップの電源が切られている時にも問題を引き起こします．チップごとに個別に電源のON/OFF管理を行うようなシステムの場合，入力側チップがOFFになっているにも関わらず出力側の信号が電源に回り込み，入力側チップを動作させてしまうことがあります．</p>
+<p>&nbsp;</p>
+<p class="lia-align-center"><li-image width="999" height="476" alt="スクリーンショット 2025-08-21 12.57.16.png" align="inline" id="353432i58FA22D9564063B3" size="large" sourceType="new"></li-image></p>
+<p class="lia-align-center"><em>図7：ESD保護ダイオード - 非トレラント入力</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<div id="idx3-2" class="pt1">
+<h2><a target="_blank" name="3.2"></a>3.2 変換が必要な例</h2>
+</div>
+<p class="lia-align-left">&nbsp;</p>
+<p class="lia-align-left">TTLやLVTTLでは電圧レベルが揃っているため上記のような接続が可能ですが，電源電圧の違うCMOSチップ同士や，CMOSとTTLチップの接続では論理レベルが合わない場合が多く発生します．前述の『<strong>「V<sub>OH</sub>(min) &gt; V<sub>IH</sub>(min)」</strong>かつ<strong>「V<sub>OL</sub>(max) &lt; V<sub>IL</sub>(max)」</strong>』の関係が成り立たない，またはその差が小さくなってしまい，ノイズ・マージンが取れないような状況がそれにあたります．</p>
+<p class="lia-align-left">この問題を解決するのが電圧レベル・トランスレータです．</p>
+<p class="lia-align-center"><em><li-image width="999" height="464" alt="スクリーンショット 2025-08-21 12.56.11.png" align="inline" id="353430i472DB86F6D9EB75D" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図9：論理レベルが合わない例(1)：充分なHIGH電圧が入力されない</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p class="lia-align-center"><em><li-image width="999" height="434" alt="スクリーンショット 2025-08-21 12.56.20.png" align="inline" id="353431i5C0290D1ABCD45CE" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図10：論理レベルが合わない例(2)：充分なLOW電圧が入力されない</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p class="lia-align-center">&nbsp;</p>
+<div id="idx3-2-1" class="pt1">
+<h3><a target="_blank" name="3.2.1"></a>3.2.1 オープンドレイン出力による変換</h3>
+</div>
+<p>&nbsp;</p>
+<p>電圧レベル変換チップを用いなくても，<strong>簡単に電圧レベル合わせを行う方法</strong>はあります．</p>
+<p>信号の方向が出力側チップ&rarr;入力側チップで固定され切り替わることがないのなら．<strong>HIGH側の出力をオープンドレイン出力にする</strong>ことで，入力側の電圧に合わせる方法です．オープンドレインはデジタル回路の出力段の上側のトランジスタがない構成のもので，<strong>入力側チップの電源電圧に接続されたプルアップ抵抗によってHIGHの電圧を得ます</strong>．</p>
+<p>&nbsp;</p>
+<p class="lia-align-center"><em><li-image width="999" height="381" alt="スクリーンショット 2025-08-21 12.58.18.png" align="inline" id="353433iDD1D05A606B2E97C" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図11：デジタル信号出力回路(オープンドレイン)</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p>オープンドレインは<strong>単純で安価な方法ですが，いくつかの注意点</strong>があります．</p>
+<p>まず出力側がオープンドレイン出力が可能なものである必要があります．多くのマイコンのGPIOピンなどでは設定によってこの出力が可能です．もしオープンドレイン出力に設定できないプッシュプル出力固定など場合には，外付けのトランジスタなどを使ってオープンドレイン出力に変換する必要があります．</p>
+<p>さらにプルアップ抵抗の選択も重要です．</p>
+<p>プルアップはHIGHの電圧を得るために必要な抵抗ですが，抵抗値が小さすぎるとLOW出力時に流れる電流が大きく(負荷が大きい状態に)なり，消費電力が増える上にV<sub>OL</sub>の上昇を招いてしまいます．</p>
+<p>逆に大きすぎると配線とピンによる容量の影響を受け，LOWからHIGHへの立ち上がりが遅くなってしまい，通信速度の低下が起こります．</p>
+<p>&nbsp;</p>
+<div id="idx3-2-2" class="pt1">
+<h3><a target="_blank" name="3.2.2"></a>3.2.2 標準ロジック(汎用ロジック)チップを用いた変換</h3>
+</div>
+<p>&nbsp;</p>
+<p>単純な電圧レベル変換であれば標準ロジックを用いる方法もあります．たとえば<a href="https://assets.nexperia.com/documents/data-sheet/74AVCH4T245.pdf" target="_self">Nexperia社の74AVCH4T245</a>は4ビットの双方向レベル変換を行うことができるCMOS汎用ロジックチップです．</p>
+<p>このチップでは0.8V〜3.6Vの信号を変換することができ，信号の方向をDIRピンによって切り替えることもできます．信号速度は変換を行う電圧にも依存しますが，100M〜380Mbps程度に対応可能です．</p>
+<p class="lia-align-center"><li-image width="913" height="387" alt="スクリーンショット 2025-08-22 3.29.11.png" align="inline" id="353562iB24C226D83E4EDC1" size="large" sourceType="new"></li-image></p>
+<p class="lia-align-center"><em>図12：標準ロジックの例 - 74AVCH4T245</em></p>
+<p>&nbsp;</p>
+<p>このチップを用いると高速な信号の双方向電圧変換が可能ですが，方向の制御は外部からの信号によって行わなければなりません．このような制御はパラレル・バスのREAD/WRITEのような信号によって可能ですが，プロトコルによって通信方向が切り替わるシリアル・バスのような通信には適用が困難です．</p>
+<p class="lia-align-center"><em><li-image width="754" height="302" alt="スクリーンショット 2025-08-22 3.29.26.png" align="inline" id="353563i3E09B8D553D61DFB" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図13：標準ロジックの例．信号の方向を外部から指定しなくてはならない</em></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="idx4" class="pt1">
+<h1><a target="_blank" name="4"></a>4. 自動方向切り替えが必要な双方向信号の変換</h1>
+</div>
+<p>&nbsp;</p>
+<p><strong>電圧レベル・トランスレータ</strong>は，異なる電圧のデジタル信号を変換するために特化した専用チップです．<br />これまでに紹介した方法は主に一方向のみの変換を行うもの，あるいは方向の切り替えが必要なものでした ．</p>
+<p>電圧変換を行う電圧レベル・トランスレータの専用品では，信号方向を自動検出するため双方向の変換が可能なものがあります．このようなチップを使うことで，たとえばI&sup2;Cのような双方向通信を行うバスの電圧レベル変換を容易に行うことができます．</p>
+<p><a href="https://community.nxp.com/t5/NXP-Tech-Blog/I-C%E3%83%90%E3%82%B9%E3%81%AE%E6%A6%82%E8%A6%81-%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%96%E3%83%AD%E3%82%B0/ba-p/2036898" target="_self"><strong>I&sup2;C</strong></a>のような信号の方向がダイナミックに変化するような通信には，方向が自動で検出して切り替わる「双方向の電圧レベル変換」が必要です．このような信号の方向を外部から制御するのは難しく，前述のようなバッファ・チップで実現するのは困難です．</p>
+<p>さらにI&sup2;Cはオープンドレイン信号であるため，オープンドレインの標準ロジック・バッファを互いに違う向きに接続するようなことができません．図14はその例です．オープンドレイン・バッファを互いに反対方向に接続しています．バッファの両側がHIGHの時は問題ありませんが，どちらかが一旦LOWになると，バッファは互いの入力をLOWに引っ張ったままとなり，HIGHに戻すことができなくなります．</p>
+<p class="lia-align-center"><em><li-image width="980" height="669" alt="スクリーンショット 2025-08-22 3.29.39.png" align="inline" id="353564i23FF2B5828849F61" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図14：通常のオープンドレイン・バッファでは双方向通信を自動切替できない</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<div id="idx4" class="pt1">
+<h2><a target="_blank" name="4.1"></a>4.1 単体MOSトランジスタによる双方向変換</h2>
+</div>
+<p class="lia-align-center">&nbsp;</p>
+<p>これまでI&sup2;Cの信号電圧変換には，単純な回路が用いられることがありました．その最も簡単なじMOSトランジスタを使った方法をその例として挙げます．</p>
+<p>&nbsp;</p>
+<p class="lia-align-center"><li-image width="921" height="374" alt="VLT_by_MOS.png" align="inline" id="353639iE0CDEB27165A083A" size="large" sourceType="new"></li-image></p>
+<p class="lia-align-center"><em>図15：MOSトランジスタを使った変換の例</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p>図15はI&sup2;Cの仕様書version2.1(2000年)から引用したもので，3.3Vと5Vの信号を2本の信号にそれぞれ1個のMOSトランジスタ(TR1, TR2)を用いる例です．このような単純なトランジスタ単体での変換例は，後述する問題点があるため<strong><a href="https://www.nxp.com/docs/en/user-guide/UM10204.pdf" target="_self">現在のI&sup2;Cの仕様書</a>からは削除</strong>されていますが，<strong>原理を理解するために紹介</strong>します．</p>
+<p>SDAとSCLと呼ばれるI&sup2;Cの信号線は，どちらもオープンドレイン出力の双方向信号となっています．3.3V側と5V側にそれぞれプルアップ抵抗が接続されています．</p>
+<p>この回路では3.3V側，5V側の信号がHIGHである場合，このトランジスタのゲート(g)とソース(s)間は同電位となるため，ソース(s)とドレイン(d)OFF状態となって互いの接続が切れた状態に置かれます．この状態で<strong>3.3VがLOWに変化</strong>すると，3.3V側の<strong>トランジスタ(のsとdの間)がON</strong>になり，<strong>5V側の信号もLOWにな</strong>ります．</p>
+<p>3.3V側がHIGHで<strong>5V側がLOWに変化</strong>した場合には，まず3.3V側から5V側への寄生<strong>ダイオード</strong>(ボディ・ダイオード)<strong>がON</strong>になります．ダイオードがONになると<strong>ソース(s)の電圧が降下</strong>．その結果<strong>トランジスタがON</strong>になり，<strong>3.3V側の信号もLOWに</strong>なります．</p>
+<p>このように<strong>トランジスタをスイッチとして使う</strong>非常に単純な仕組みで電圧レベル変換ができるのですが，ここには問題もあります．トランジスタのバラツキが信号変換の閾値に影響すること．さらに今日ではより低い信号電圧を扱うことが増えてきており，たとえば信号電圧が1V程度では，このような回路では十分なゲート(g)とソース(s)間電圧(Vgs)が得られないため動作させることができません．</p>
+<p>&nbsp;</p>
+<div id="idx4-2" class="pt1">
+<h2><a target="_blank" name="4.2"></a>4.2 専用品による双方向変換</h2>
+</div>
+<h2>&nbsp;</h2>
+<div id="idx4-2-1" class="pt1">
+<h3><a target="_blank" name="4.2.1"></a>4.2.1 I&sup2;C信号電圧変換チップ</h3>
+</div>
+<p>&nbsp;</p>
+<p><strong><a href="https://www.nxp.jp/products/PCA9306" target="_self">PCA9306</a></strong>，<strong>NVT20xx</strong>シリーズ(<a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2001_NVT2002" target="_self"><strong>NVT2001/02</strong></a>, <a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2003_06" target="_self"><strong>NVT2003/06</strong></a>, <a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2008_NVT2010" target="_self"><strong>NVT2008/10</strong></a>)は双方向信号の変換に特化した電圧レベル・トランスレータです．これらのチップでは複数の信号線(複数ビットの信号線)をまとめて扱うことができます．これらはI&sup2;C信号の電圧変換チップとされていますが，<strong>信号の仕様が合えば他の目的(SPIやその他のプッシュプル信号など)にも</strong>使うことができます．</p>
+<p>PCA9306，NVT20xxシリーズは同じ内部構造を持ち，<strong>プルアップ抵抗は，変換する電圧差が1V以上であれば電圧の高い側だけに接続すれば良い</strong>ようになっています．</p>
+<p>図16はその<strong>内部構造と外部チップの接続</strong>を示したものです(<a href="https://www.nxp.jp/docs/en/application-note/AN11127.pdf" target="_self">アプリケーションノート<strong>AN11127</strong>：「Bidirectional voltage level translators NVT20xx and PCA9306」</a>のFig.2から抜粋)．このチップ内部には信号線数(ビット数)+1個のMOSトランジスタが内蔵されています．各トランジスタはソースとドレインが可換の構造となっています．</p>
+<p>信号を伝達するための経路のトランジスタは<strong>パス・トランジスタ</strong>と呼ばれ，残りの1個は<strong>リファレンス・トランジスタ</strong>と呼ばれます．</p>
+<p>&nbsp;</p>
+<p class="lia-align-center"><li-image width="999" height="614" alt="スクリーンショット 2025-08-22 15.56.50.png" align="inline" id="353634i9AB827115DE0CD6B" size="large" sourceType="new"></li-image></p>
+<p class="lia-align-center"><em>図16：NVT20xx(PCA9306) - チップ動作の解説図</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p>回路を見てみると，<strong>リファレンス・トランジスタ</strong>のゲートとドレイン間はショートされており，200k&Omega;の抵抗を介して高い電圧側の電源に接続されています．リファレンス・トランジスタの残りの端子：ソースは低電圧側の電源に接続されています．このような接続により，<strong>リファレンス・トランジスタは1個のダイオードとなって</strong>おり，この<strong>ゲート電圧は低電圧側の電源よりもダイオード1個分高い電圧</strong>となります．</p>
+<p>残りの<strong>パス・トランジスタ</strong>はドレイン側が高い電圧側の信号線と1k&Omega;のプルアップ抵抗に，ソース側は低い電圧側の信号線，さらにゲートはリファレンス・トランジスタのゲートに接続されています．パス・トランジスタの高い側，低い側の信号がどちらもHIGHになっている時，<strong>高い側は1k&Omega;によってプルアップされた電圧</strong>となります．</p>
+<p><strong>パス・トランジスタ</strong>はいわゆる「ソースフォロワ」と呼ばれる回路を構成しています．<strong>低い電圧側の端子(ソース端子)は，ゲートに印加されている電圧よりトランジスタをONにするために必要なVgs分だけ低い電圧が現れます</strong>．つまり低電圧側の電源と同じ電圧となります．トランジスタはONでもOFFでもない半分ONの状態(線形領域での動作)になっています．</p>
+<p>この状態で，<strong>高または低のどちら側かの信号がLOW</strong>になると，<strong>ゲートと信号端子の電圧差によりトランジスタがON</strong>(完全にONとなった飽和領域での動作)になり，<strong>反対側の端子もLOW</strong>になります．</p>
+<p>このシリーズで扱える信号速度は，プルアップと信号線の容量の影響を受けます．データシートでは，PCA9306は2MHzまで．NVT20xxシリーズでは192&Omega;のプルアップ抵抗を使用し，容量50pFの条件で最大33MHzまでの信号速度に対応可能とされています．1MHz程度の信号であれば，プルアップ抵抗や容量をあまり気にしなくても(通常I&sup2;Cで使うような範囲内を想定)で問題なく動作します．しかしこのチップをプッシュプルのより高速な信号を扱う場合には特製の把握と慎重な部品選択が必要になります．</p>
+<p>このタイプの電圧レベル・トランスレータ動作の詳細は，<a href="https://qiita.com/teddokano/items/2ecc1f65d7cd45e78b49" target="_self">こちらの記事</a>で紹介されています．</p>
+<p>&nbsp;</p>
+<div id="idx4-2-2" class="pt1">
+<h3><a target="_blank" name="4.2.2"></a>4.2.2 高速化を図った双方向オープンドレイン信号電圧変換チップ</h3>
+</div>
+<p>&nbsp;</p>
+<p>高速化を図った双方向オープンドレイン信号変換チップとして，<strong>NTS030x</strong>シリーズ(<span><strong><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/2-bit-dual-supply-translating-transceiver-open-drain-auto-direction-sensing:NTS0302JK" target="_self">NTS0302JK</a></strong>,&nbsp;<strong><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/4-bit-dual-supply-translating-transceiver-open-drain-auto-direction-sensing:NTS0304E" target="_self">NTS0304E</a></strong></span>)を紹介します．</p>
+<p>このチップは2ビットまたは4ビットの双方向信号変換を行うことができ，オープンドレイン信号であれば2Mbps(1MHz)，プッシュプル信号であれば20Mbps(10MHz)の信号に対応可能です．</p>
+<p class="lia-align-center">&nbsp;</p>
+<p class="lia-align-center"><li-image width="937" height="460" alt="スクリーンショット 2025-08-22 15.59.57.png" align="inline" id="353641i6E8EE358ED8287EA" size="large" sourceType="new"></li-image></p>
+<p class="lia-align-center"><em>図17：NTS030x - チップ内部ブロック図</em></p>
+<p class="lia-align-center">&nbsp;</p>
+<p>図17はNTS030xの信号1ビット分の内部構造です．</p>
+<p>図では<strong>T3</strong>のトランジスタが<strong>パス・トランジスタ</strong>となっており，ゲート端子バイアス電圧がかけられているので，AとBと書かれた信号のどちらかがLOWとなった時にONとなります．</p>
+<p>AとBの両方がHIGHの時はT3がOFFになり，AとBはそれぞれの電源に比較的大きいプルアップ抵抗(10k&Omega;)で接続されているのでそれぞれの電圧となります．</p>
+<p>このチップにはT3のほかに<strong>T1</strong>と<strong>T2</strong>が存在しています．このT1とT2は「<strong>エッジレート・アクセラレータ</strong>」と呼ぶ機能のために使われます．このうちの片方，T1に注目しこの動作を解説します．</p>
+<p><strong>T1</strong>はA側に置かれ，ソース端子はA信号に，ドレイン端子はA側電源に接続されています．ゲート端子はこれを制御する「ONE-SHOT AND SLEW RATE CONTROL」と書かれたブロックに接続されています．</p>
+<p>「ONE-SHOT AND SLEW RATE CONTROL」ブロックは反対側のB信号に接続されていて，<strong>B側の信号のLOWからHIGHへの変化を検出</strong>．これを<strong>検出した時に一時的にT1をONにして，プルアップの10k&Omega;抵抗をバイパス</strong>して電流を流す事により，<strong>A側の信号のHIGHへの変化を加速</strong>します．このように信号の立ち上がりを速くすることで，より高速な信号を扱うことができるようにしています．</p>
+<p>ちなみに，このT1をONにする際のスルーレートは制御されていて，急な電流増加によるリンギング発生を抑えることも考慮されています．</p>
+<p>もういっぽうの<strong>T2</strong>はこの同じ仕組みが逆方向に作られており，B側信号にも適用されるようになっています．</p>
+<p>この<strong>NTSシリーズにはもう一つの使いやすい点</strong>があります．</p>
+<p>ここまで説明したMOSトランジスタ単体やPCA9306/NVT20xxの場合，どちらかの電源がOFFになった場合，他方の信号をLOWにしてしまうという問題がありました．NTS030xではこの問題を解決するために，<strong>両方の電源がONになっていない場合は，互いに影響が出ないように信号ピンをハイ・インピーダンス状態とするよう動作</strong>します．このような機能を使うことにより，<strong>システムの電源を部分的にON/OFF制御</strong>するような使い方が可能になります．</p>
+<p>NTS030xシリーズと同等品で，より高速の信号に対応するためスルーレート制御機能の無い<strong>NTS010x</strong>シリーズ(<a href="https://www.nxp.jp/products/NTS0102" target="_self"><strong>NTS0102</strong></a>, <a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/dual-supply-translating-transceiver-open-drain-auto-direction-sensing:NTS0104" target="_self"><strong>NTS0104</strong></a>)も用意されています．</p>
+<p>&nbsp;</p>
+<div id="idx4-2-3" class="pt1">
+<h3><a target="_blank" name="4.2.3"></a>4.2.3 双方向プッシュプル信号電圧変換チップ</h3>
+</div>
+<p>&nbsp;</p>
+<p>さらにこのNTS030xシリーズをプッシュプル信号だけで使う場合のより高速なオプションとして<strong>NT<font color="#FF0000">B</font>010x</strong>シリーズ(<a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/dual-supply-translating-transceiver-auto-direction-sensing-three-state:NTB0102" target="_self"><strong>NTB0102</strong></a>, <strong><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/dual-supply-translating-transceiver-auto-direction-sensing-three-state:NTB0104" target="_self">NTB0104</a></strong>)があります．</p>
+<p>HIGHまたはLOWで安定した状態では4k&Omega;を通して信号を駆動．NTS030xシリーズ同様のワンショット機能をHIGHとLOW側の両側に持たせ，いずれかの端子で信号の変化があった場合にこれを用いて，反対側信号を変化させる機構を持っています．</p>
+<p>このような機構により，信号方向の自動検出機能を持ちながら70〜80Mbpsの速度の信号電圧変換が可能です．</p>
+<p class="lia-align-center">&nbsp;</p>
+<p class="lia-align-center"><li-image width="999" height="706" alt="スクリーンショット 2025-08-22 16.04.45.png" align="inline" id="353645i722D05270E4AFD17" size="large" sourceType="new"></li-image></p>
+<p class="lia-align-center"><em>図17：NTB010x - チップ内部ブロック図</em></p>
+<p>&nbsp;</p>
+<div id="idx4-2-4" class="pt1">
+<h3><a target="_blank" name="4.2.4"></a>4.2.4 I3C信号電圧変換チップ</h3>
+</div>
+<p>&nbsp;</p>
+<p><a href="https://community.nxp.com/t5/NXP-Tech-Blog/I3C%E3%83%90%E3%82%B9%E3%81%AE%E6%A6%82%E8%A6%81-%E6%AC%A1%E3%81%AE%E3%82%B7%E3%83%AA%E3%82%A2%E3%83%AB%E3%83%90%E3%82%B9-%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%96%E3%83%AD%E3%82%B0/ba-p/2036760" target="_self"><strong>I3C</strong></a>は<strong>オープンドレインとプッシュプルを切り替えながら通信を行う</strong>仕様を持ち，オープンドレインでは<strong>I&sup2;Cと互換</strong>〜<strong>4MHz</strong>の周波数．プッシュプル時は<strong>12.5MHz</strong>のクロックが使われます．信号の電圧は通常1V〜3.3Vの範囲で使われるため，電圧差がある場合には，信号仕様に合わせた動作をする電圧レベル・トランスレータが必要になります．</p>
+<p>図18は<a href="https://www.nxp.jp/products/P3A1604" target="_self"><strong>P3A1604</strong></a>の1ビット分の内部ブロック図です．このチップでは図の通り，LOW&rarr;HIGHだけでなくHIGH&rarr;LOWの変化を加速する仕組みとON/OFFの切り替えができるプルアップ抵抗が内蔵されています．</p>
+<p>&nbsp;</p>
+<p class="lia-align-center">&nbsp;</p>
+<p class="lia-align-center"><em><li-image width="999" height="618" alt="スクリーンショット 2025-08-22 16.28.46.png" align="inline" id="353651iCDECD9C97C1B6F05" size="large" sourceType="new"></li-image></em></p>
+<p class="lia-align-center"><em>図18：P3A1604&nbsp;- チップ内部ブロック図</em></p>
+<p data-unlink="true">P3A1604は4ビット用のI3C電圧レベル・トランスレータ．この他にも2ビット用の<a href="https://www.nxp.jp/products/P3A9606" target="_self"><strong>P3A9606</strong></a>も用意されています．</p>
+<p class="lia-align-center">&nbsp;</p>
+<p>&nbsp;</p>
+<div id="idx4-2-5" class="pt1">
+<h3><a target="_blank" name="4.2.5"></a>4.2.5 バッファによる変換</h3>
+</div>
+<p>&nbsp;</p>
+<p>もう一つの双方向信号の変換方法として，専用品のバッファを使う方法があります．<br />バッファの本来の目的は，駆動能力の増強や接続している信号線の容量の分離などですが，電圧の変換に対応した製品も存在します．</p>
+<p>双方向のオープンドレイン信号を相互にバッファするには，このブログの中で説明したように単純なバッファでは実現できません．そのため双方向オープンドレイン信号用として様々な工夫がされたバッファ製品が用意されています．</p>
+<p>バッファについての詳細はまた次の機会に解説する予定です．</p>
+<p>&nbsp;</p>
+<div id="idx5" class="pt1">
+<h1><a target="_blank" name="5"></a>5. まとめ</h1>
+</div>
+<p>&nbsp;</p>
+<p>電圧レベル・トランスレータは，異なる電源電圧を持つデジタル回路間で安全かつ確実に信号をやり取りするために不可欠な部品です．TTLやLVTTL，CMOSなど論理レベルの規定や，VOH/VOL/VIH/VILの関係を理解することで，適切な接続や変換方法を選択できます．</p>
+<p>片方向の変換にはオープンドレイン出力や標準ロジックIC，双方向の変換にはMOSトランジスタや専用IC（PCA9306/NVT/NTS/NTB/P3Aシリーズなど）が利用できます．<br />特にI&sup2;CやI3Cなど双方向通信が必要なバスでは，信号方向の自動検出機能を持つ電圧レベル・トランスレータが有効です．</p>
+<p>また，近年の半導体技術の進化により，低電圧化・高速化が進み，より厳密な電圧レベル管理が求められるようになっています．電圧レベル変換の方法や選択肢は多岐にわたりますが，信号仕様や速度，システムの電源管理など用途に応じて最適な方法・部品を選ぶことが重要です．</p>
+<p>&nbsp;</p>
+<div id="idx5-1" class="pt1">
+<h2><a target="_blank" name="5.1"></a>5.1 ブログ内で紹介した方式/品番の比較</h2>
+</div>
+<table width="1101">
+<tbody>
+<tr>
+<td width="319.703px" height="47px">方式/品番</td>
+<td width="127.844px" height="47px">用途</td>
+<td width="99.8906px" height="47px">ビット数</td>
+<td width="99.8906px" height="47px">方向切替</td>
+<td width="99.8906px" height="47px">オープンドレイン対応</td>
+<td width="99.8906px" height="47px">低電圧側[V]</td>
+<td width="99.8906px" height="47px">高電圧側[V]</td>
+<td width="153px" height="47px">ビットレート[bps]</td>
+</tr>
+<tr>
+<td width="319.703px" height="25px">オープンドレイン出力での変換</td>
+<td width="127.844px" height="25px">汎用</td>
+<td width="99.8906px" height="25px">1</td>
+<td width="99.8906px" height="25px">片方向</td>
+<td width="99.8906px" height="25px">-</td>
+<td width="99.8906px" height="25px">-</td>
+<td width="99.8906px" height="25px">-</td>
+<td width="153px" height="25px">-</td>
+</tr>
+<tr>
+<td width="319.703px" height="47px">標準ロジック(例:74AVCH4T245)</td>
+<td width="127.844px" height="47px">汎用(パラレルバスなど)</td>
+<td width="99.8906px" height="47px">4 + 4</td>
+<td width="99.8906px" height="47px">外部制御</td>
+<td width="99.8906px" height="47px">非対応</td>
+<td width="99.8906px" height="47px">0.8 ~ 3.6</td>
+<td width="99.8906px" height="47px">0.8 ~ 3.6</td>
+<td width="153px" height="47px">100M ~ 380M</td>
+</tr>
+<tr>
+<td width="319.703px" height="47px">単体MOSトランジスタによる双方向変換</td>
+<td width="127.844px" height="47px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="47px">1</td>
+<td width="99.8906px" height="47px">自動</td>
+<td width="99.8906px" height="47px">対応</td>
+<td colspan="2" width="199.781px" height="47px">トランジスタの仕様による</td>
+<td width="153px" height="47px">~ 1M</td>
+</tr>
+<tr>
+<td width="319.703px" height="47px"><a href="https://www.nxp.jp/products/PCA9306" target="_self">PCA9306</a></td>
+<td width="127.844px" height="47px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="47px">2</td>
+<td width="99.8906px" height="47px">自動</td>
+<td width="99.8906px" height="47px">対応</td>
+<td width="99.8906px" height="47px">1.0 ~ 5.5</td>
+<td width="99.8906px" height="47px">1.0 ~ 5.5</td>
+<td width="153px" height="47px">4M (2MHz．条件による)</td>
+</tr>
+<tr>
+<td width="319.703px" height="91px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2001_NVT2002" target="_self">NVT2001</a></td>
+<td width="127.844px" height="91px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="91px">1</td>
+<td width="99.8906px" height="91px">自動</td>
+<td width="99.8906px" height="91px">対応</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="153px" height="91px">4M(2MHz@オープンドレイン), 66M(33MHz@最適化条件による)</td>
+</tr>
+<tr>
+<td width="319.703px" height="91px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2001_NVT2002" target="_self">NVT2002</a></td>
+<td width="127.844px" height="91px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="91px">2</td>
+<td width="99.8906px" height="91px">自動</td>
+<td width="99.8906px" height="91px">対応</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="153px" height="91px">4M(2MHz@オープンドレイン), 66M(33MHz@最適化条件による)</td>
+</tr>
+<tr>
+<td width="319.703px" height="91px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2003_06" target="_self">NVT2003</a></td>
+<td width="127.844px" height="91px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="91px">3</td>
+<td width="99.8906px" height="91px">自動</td>
+<td width="99.8906px" height="91px">対応</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="153px" height="91px">4M(2MHz@オープンドレイン), 66M(33MHz@最適化条件による)</td>
+</tr>
+<tr>
+<td width="319.703px" height="91px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2003_06" target="_self">NVT2006</a></td>
+<td width="127.844px" height="91px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="91px">6</td>
+<td width="99.8906px" height="91px">自動</td>
+<td width="99.8906px" height="91px">対応</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="153px" height="91px">4M(2MHz@オープンドレイン), 66M(33MHz@最適化条件による)</td>
+</tr>
+<tr>
+<td width="319.703px" height="91px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2008_NVT2010" target="_self">NVT2008</a></td>
+<td width="127.844px" height="91px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="91px">8</td>
+<td width="99.8906px" height="91px">自動</td>
+<td width="99.8906px" height="91px">対応</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="153px" height="91px">4M(2MHz@オープンドレイン), 66M(33MHz@最適化条件による)</td>
+</tr>
+<tr>
+<td width="319.703px" height="91px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/bidirectional-voltage-level-translator-for-open-drain-and-push-pull-applications:NVT2008_NVT2010" target="_self">NVT2010</a></td>
+<td width="127.844px" height="91px">I&sup2;C, 汎用</td>
+<td width="99.8906px" height="91px">10</td>
+<td width="99.8906px" height="91px">自動</td>
+<td width="99.8906px" height="91px">対応</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="99.8906px" height="91px">1.0 ~ 5.5</td>
+<td width="153px" height="91px">4M(2MHz@オープンドレイン), 66M(33MHz@最適化条件による)</td>
+</tr>
+<tr>
+<td width="319.703px" height="69px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/2-bit-dual-supply-translating-transceiver-open-drain-auto-direction-sensing:NTS0302JK" target="_self">NTS0302JK</a></td>
+<td width="127.844px" height="69px">I&sup2;C, SPI, 汎用</td>
+<td width="99.8906px" height="69px">2</td>
+<td width="99.8906px" height="69px">自動</td>
+<td width="99.8906px" height="69px">対応</td>
+<td width="99.8906px" height="69px">0.95 ~ 3.6</td>
+<td width="99.8906px" height="69px">1.65 ~ 5.5</td>
+<td width="153px" height="69px">2M @オープンドレイン, 20M @プッシュプル</td>
+</tr>
+<tr>
+<td width="319.703px" height="69px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/4-bit-dual-supply-translating-transceiver-open-drain-auto-direction-sensing:NTS0304E" target="_self">NTS0304E</a></td>
+<td width="127.844px" height="69px">I&sup2;C, SPI, 汎用</td>
+<td width="99.8906px" height="69px">4</td>
+<td width="99.8906px" height="69px">自動</td>
+<td width="99.8906px" height="69px">対応</td>
+<td width="99.8906px" height="69px">0.95 ~ 3.6</td>
+<td width="99.8906px" height="69px">1.65 ~ 5.5</td>
+<td width="153px" height="69px">2M @オープンドレイン, 20M @プッシュプル</td>
+</tr>
+<tr>
+<td width="319.703px" height="47px"><a href="https://www.nxp.jp/products/NTS0102" target="_self">NTS0102</a></td>
+<td width="127.844px" height="47px">I&sup2;C, SPI, 汎用</td>
+<td width="99.8906px" height="47px">2</td>
+<td width="99.8906px" height="47px">自動</td>
+<td width="99.8906px" height="47px">対応</td>
+<td width="99.8906px" height="47px">1.65 ~ 3.6</td>
+<td width="99.8906px" height="47px">2.3 ~ 5.5</td>
+<td width="153px" height="47px">50M @プッシュプル</td>
+</tr>
+<tr>
+<td width="319.703px" height="47px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/dual-supply-translating-transceiver-open-drain-auto-direction-sensing:NTS0104" target="_self">NTS0104</a></td>
+<td width="127.844px" height="47px">I&sup2;C, SPI, 汎用</td>
+<td width="99.8906px" height="47px">4</td>
+<td width="99.8906px" height="47px">自動</td>
+<td width="99.8906px" height="47px">対応</td>
+<td width="99.8906px" height="47px">1.65 ~ 3.6</td>
+<td width="99.8906px" height="47px">2.3 ~ 5.5</td>
+<td width="153px" height="47px">50M @プッシュプル</td>
+</tr>
+<tr>
+<td width="319.703px" height="25px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/dual-supply-translating-transceiver-auto-direction-sensing-three-state:NTB0102" target="_self">NTB0102</a></td>
+<td width="127.844px" height="25px">SPI, 汎用</td>
+<td width="99.8906px" height="25px">2</td>
+<td width="99.8906px" height="25px">自動</td>
+<td width="99.8906px" height="25px">非対応</td>
+<td width="99.8906px" height="25px">1.2 ~ 3.6</td>
+<td width="99.8906px" height="25px">1.65 ~ 5.5</td>
+<td width="153px" height="25px">70M ~ 80M</td>
+</tr>
+<tr>
+<td width="319.703px" height="25px"><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators/dual-supply-translating-transceiver-auto-direction-sensing-three-state:NTB0104" target="_self">NTB0104</a></td>
+<td width="127.844px" height="25px">SPI, 汎用</td>
+<td width="99.8906px" height="25px">4</td>
+<td width="99.8906px" height="25px">自動</td>
+<td width="99.8906px" height="25px">非対応</td>
+<td width="99.8906px" height="25px">1.2 ~ 3.6</td>
+<td width="99.8906px" height="25px">1.65 ~ 5.5</td>
+<td width="153px" height="25px">70M ~ 80M</td>
+</tr>
+<tr>
+<td width="319.703px" height="47px"><a href="https://www.nxp.jp/products/P3A9606" target="_self">P3A9606</a></td>
+<td width="127.844px" height="47px">I3C, I&sup2;C, SPI, 汎用</td>
+<td width="99.8906px" height="47px">2</td>
+<td width="99.8906px" height="47px">自動</td>
+<td width="99.8906px" height="47px">対応</td>
+<td width="99.8906px" height="47px">0.72 ~ 1.98</td>
+<td width="99.8906px" height="47px">0.72 ~ 1.98</td>
+<td width="153px" height="47px">(12.5MHz)</td>
+</tr>
+<tr>
+<td width="319.703px" height="69px"><a href="https://www.nxp.jp/products/P3A1604" target="_self">P3A1604</a></td>
+<td width="127.844px" height="69px">I3C, I&sup2;C, SPI, 汎用</td>
+<td width="99.8906px" height="69px">4</td>
+<td width="99.8906px" height="69px">自動</td>
+<td width="99.8906px" height="69px">対応</td>
+<td width="99.8906px" height="69px">0.72 ~ 1.98</td>
+<td width="99.8906px" height="69px">1.62 ~ 3.63</td>
+<td width="153px" height="69px">6.8M @オープンドレイン, 40M @プッシュプル</td>
+</tr>
+</tbody>
+</table>
+<div class="pt1 lia-align-center"><em>表1：ブログ内で紹介した方式/品番の比較</em></div>
+<div class="pt1">&nbsp;</div>
+<div id="idx6" class="pt1">
+<h1><a target="_blank" name="6"></a>6. 参考資料</h1>
+</div>
+<p>&nbsp;</p>
+<p><span>製品紹介ページ：電圧レベル変換器<br /></span><a href="https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators:VOLTAGE-LEVEL-TRANSLATORS" target="_blank" rel="noopener">https://www.nxp.jp/products/analog-and-mixed-signal/voltage-level-translators:VOLTAGE-LEVEL-TRANSLATORS</a></p>
+<p>NXP システム・マネジメントI2C, I3C, SPIセレクタ・ガイド<br /><a href="https://www.nxp.com/docs/ja/product-selector-guide/I2CSELECTORBROC.pdf" target="_blank" rel="noopener nofollow noreferrer">https://www.nxp.com/docs/ja/product-selector-guide/I2CSELECTORBROC.pdf</a></p>
+<p>I2C バス仕様およびユーザーマニュアル (Rev5.0 日本語版)<br /><a href="https://www.nxp.com/docs/ja/user-guide/UM10204.pdf" target="_blank" rel="noopener">https://www.nxp.com/docs/ja/user-guide/UM10204.pdf</a></p>
+<p>I2C バス仕様およびユーザーマニュアル (Rev7.0 英語版)<br /><a href="https://www.nxp.com/docs/en/user-guide/UM10204.pdf" target="_blank" rel="noopener">https://www.nxp.com/docs/en/user-guide/UM10204.pdf</a></p>
+<p>NXPコミュニティ・ブログ：I3Cバスの概要 ～次のシリアルバス～<br /><a href="https://community.nxp.com/t5/NXP-Tech-Blog/I3C%E3%83%90%E3%82%B9%E3%81%AE%E6%A6%82%E8%A6%81-%E6%AC%A1%E3%81%AE%E3%82%B7%E3%83%AA%E3%82%A2%E3%83%AB%E3%83%90%E3%82%B9/ba-p/2036760" target="_blank" rel="noopener">https://community.nxp.com/t5/NXP-Tech-Blog/I3C%E3%83%90%E3%82%B9%E3%81%AE%E6%A6%82%E8%A6%81-%E6%AC%A1%E3%81%AE%E3%82%B7%E3%83%AA%E3%82%A2%E3%83%AB%E3%83%90%E3%82%B9/ba-p/2036760</a></p>
+<p><font color="#000000">日本語ウェビナー動画『【今知っておくべき】次世代インターフェース「I3C」の基礎』&nbsp;</font><br /><a href="https://www.nxp.jp/design/design-center/training/TIP-240723_I3C_Webinar_JP" target="_self" rel="nofollow noopener noreferrer">https://www.nxp.jp/design/design-center/training/TIP-240723_I3C_Webinar_JP</a><span>&nbsp;</span></p>
+<p>Qiita @teddokano：PCA9306の中身と動作<br /><a href="https://qiita.com/teddokano/items/2ecc1f65d7cd45e78b49" target="_blank" rel="noopener">https://qiita.com/teddokano/items/2ecc1f65d7cd45e78b49</a></p>
+<p>&nbsp;</p>
+<p>変更履歴：<br />2025-08-xx：初版<br />=========================<br />本投稿の「Comment」欄にコメントをいただいても，現在返信に対応しておりません．<br />お手数をおかけしますが，お問い合わせの際には，NXP代理店，もしくはNXPまでお問い合わせください．</p>
